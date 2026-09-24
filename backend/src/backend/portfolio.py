@@ -1,11 +1,20 @@
 import os
+from pathlib import Path
+
 from dotenv import load_dotenv
 from groq import Groq
 from pypdf import PdfReader
 from docx import Document
-from pathlib import Path
+from fastapi import FastAPI
 
 load_dotenv()
+
+app=FastAPI()
+
+@app.get("/")
+def root():
+    return {"message":"Portfolio AI Backend is running."}
+
 
 my_api_key=os.getenv("GROQ_API_KEY")
 if not my_api_key:
