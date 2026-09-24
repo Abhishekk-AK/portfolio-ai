@@ -61,40 +61,51 @@ resume_text=""
 for file_path in resume_folder.iterdir():
     if file_path.suffix.lower() not in [".pdf", ".docx"]:
         continue
-    print("\nProcessing: ",file_path.name)
-    resume_text=read_file(file_path)
 
-print("************************* \n", resume_text, "\n ************************")
+    print("\nProcessing: ",file_path.name)
+
+    file_text=read_file(file_path)
+
+    if file_text:
+        resume_text+=file_text+"\n"
+
+# print("************************* \n", resume_text, "\n ************************")
 
 candidate_details=f"""
-    Candidate Details={resume_text}
+    Candidate Details:
+    {resume_text}
 """
 
 system_prompt=f"""
     You are my Portfolio agent.
 
-    You have to give answers about me according to:
-    my-details={candidate_details}
-    All the answers you give should be completely correct.
-    Do do make-up or guess any answer.
-    
+    You answer questions about me using only the candidate
+    information provided below.
+
+    Candidate information:
+    {candidate_details}
+
+    Rules:
+    - Give completely correct answers.
+    - Do not make up information.
+    - Do not guess information that is not present.
+    - If the information is not available, clearly say that it is not available.
+    - When evaluating a job, compare the job requirements against the candidate's actual skills and experience.
+
 """
 
-system_message={
-    "role":"system",
-    "content":system_prompt
-}
+def ask_portfolio_agent(user_prompt):
+    system_message={
+        "role":"system",
+        "content":system_prompt
+    }
 
-user_message="""
-    What is candidates name and age and skills.
-    Is he suitable for java developer, python dev, backend engineer, web-dev, system artitect
-"""
+    user_message={
+        "role":"user",
+        "content":user_prompt  
+    }
 
-user_message={
-    "role":"user",
-    "content":user_message   
-}
+    messages=[system_message,user_message]
+    res=client.chat.completions.create(model=model,messages=messages)
 
-messages=[system_message,user_message]
-res=client.chat.completions.create(model=model,messages=messages)
-print(res.choices[0].message.content)
+    return res.choices[0].message.content
