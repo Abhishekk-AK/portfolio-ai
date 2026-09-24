@@ -6,10 +6,20 @@ from groq import Groq
 from pypdf import PdfReader
 from docx import Document
 from fastapi import FastAPI
+from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
 app=FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 def root():
@@ -109,3 +119,17 @@ def ask_portfolio_agent(user_prompt):
     res=client.chat.completions.create(model=model,messages=messages)
 
     return res.choices[0].message.content
+
+
+
+# chat request from fastAPI
+class ChatRequest(BaseModel):
+    message:str
+
+@app.post("/chat")
+def chat(request:ChatRequest):
+    response=ask_portfolio_agent(request.message)
+
+    return {
+        "response":response
+    }

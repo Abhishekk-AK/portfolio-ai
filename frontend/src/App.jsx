@@ -12,6 +12,7 @@ import {
   User,
   X,
 } from "lucide-react";
+import { apiRequest } from "./services/api";
 
 const initialChats = [
   { id: 1, title: "Tell me about Abhishek", time: "Today" },
@@ -99,23 +100,41 @@ function App() {
         title: value || attachedFile?.name || "New conversation",
         time: "Just now",
       };
+
       setActiveChat(newChat.id);
       setChats((current) => [newChat, ...current]);
     }
 
-    // Mock backend delay. Replace this block with your API call later.
-    window.setTimeout(() => {
+    try {
+      const data = await apiRequest("/chat", {
+        method: "POST",
+        body: JSON.stringify({
+          message: value,
+        }),
+      });
+
       setMessages((current) => [
         ...current,
         {
           id: crypto.randomUUID(),
           role: "assistant",
-          content:
-            "Thanks! I received your message. This is currently a frontend mock response. The next step is to connect this composer to your FastAPI `/chat` and `/upload` endpoints.",
+          content: data.response,
         },
       ]);
+    } catch (error) {
+      console.error("Chat API error:", error);
+
+      setMessages((current) => [
+        ...current,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: "Sorry, something went wrong. Please try again.",
+        },
+      ]);
+    } finally {
       setIsLoading(false);
-    }, 800);
+    }
   };
 
   const handleKeyDown = (event) => {
