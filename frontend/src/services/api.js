@@ -15,3 +15,20 @@ export const apiRequest = async (endpoint, options = {}) => {
 
     return response.json();
 };
+
+
+export const uploadFile = async (file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${API_BASE_URL}/upload`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Upload failed: ${response.status}`);
+  }
+
+  return response.json();
+};

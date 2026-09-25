@@ -12,7 +12,7 @@ import {
   User,
   X,
 } from "lucide-react";
-import { apiRequest } from "./services/api";
+import { apiRequest, uploadFile } from "./services/api";
 
 const initialChats = [
   { id: 1, title: "Tell me about Abhishek", time: "Today" },
@@ -63,24 +63,31 @@ function App() {
     setSidebarOpen(false);
 
     // Mock conversation until FastAPI is connected.
-    setMessages([
-      {
-        id: `${chat.id}-user`,
-        role: "user",
-        content: chat.title,
-      },
-      {
-        id: `${chat.id}-assistant`,
-        role: "assistant",
-        content:
-          "This is a mock response for the frontend. Once FastAPI is connected, this message will come from your Portfolio-AI backend and your personal knowledge base.",
-      },
-    ]);
+    // setMessages([
+    //   {
+    //     id: `${chat.id}-user`,
+    //     role: "user",
+    //     content: chat.title,
+    //   },
+    //   {
+    //     id: `${chat.id}-assistant`,
+    //     role: "assistant",
+    //     content:
+    //       "This is a mock response for the frontend. Once FastAPI is connected, this message will come from your Portfolio-AI backend and your personal knowledge base.",
+    //   },
+    // ]);
   };
 
   const sendMessage = async (text = input) => {
     const value = text.trim();
     if (!value && !attachedFile) return;
+
+    let documentId = null;
+
+    if(attachedFile) {
+      const uploadData=await uploadFile(attachedFile);
+      documentId=uploadData.document_id
+    }
 
     const userMessage = {
       id: crypto.randomUUID(),
@@ -110,6 +117,7 @@ function App() {
         method: "POST",
         body: JSON.stringify({
           message: value,
+          document_id:documentId,
         }),
       });
 

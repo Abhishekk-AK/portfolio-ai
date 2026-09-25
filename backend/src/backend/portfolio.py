@@ -107,8 +107,10 @@ system_prompt=f"""
 
 def ask_portfolio_agent(user_prompt, document_text=""):
 
+    current_system_prompt=system_prompt
+
     if document_text:
-        system_prompt += f"""
+        current_system_prompt += f"""
         The user has uploaded the following document.
         Use it when answering the user's questions.
 
@@ -117,7 +119,7 @@ def ask_portfolio_agent(user_prompt, document_text=""):
         """
     system_message={
         "role":"system",
-        "content":system_prompt
+        "content":current_system_prompt
     }
 
     user_message={
@@ -135,7 +137,9 @@ def ask_portfolio_agent(user_prompt, document_text=""):
 # chat request from fastAPI
 class ChatRequest(BaseModel):
     message:str
-    document_id:str
+    document_id:str | None=None
+
+uploaded_documents={}
 
 @app.post("/chat")
 def chat(request:ChatRequest):
@@ -157,8 +161,6 @@ def chat(request:ChatRequest):
     }
 
 # upload file api
-uploaded_documents={}
-
 @app.post("/upload")
 async def upload_file(file: UploadFile=File(...)):
     file_extension=Path(file.filename).suffix.lower()
