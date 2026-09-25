@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+import uuid
 from dotenv import load_dotenv
 from groq import Groq
 from pypdf import PdfReader
@@ -104,7 +105,16 @@ system_prompt=f"""
 
 """
 
-def ask_portfolio_agent(user_prompt):
+def ask_portfolio_agent(user_prompt, document_text=""):
+
+    if document_text:
+        system_prompt += f"""
+        The user has uploaded the following document.
+        Use it when answering the user's questions.
+
+        Uploaded document:
+        {document_text}
+        """
     system_message={
         "role":"system",
         "content":system_prompt
@@ -125,16 +135,30 @@ def ask_portfolio_agent(user_prompt):
 # chat request from fastAPI
 class ChatRequest(BaseModel):
     message:str
+    document_id:str
 
 @app.post("/chat")
 def chat(request:ChatRequest):
-    response=ask_portfolio_agent(request.message)
+    document_text=""
+
+    if request.document_id:
+        document_text=uploaded_documents.get(
+            request.document_id,
+            ""
+        )
+
+    response=ask_portfolio_agent(
+        request.message,
+        document_text
+    )
 
     return {
         "response":response
     }
 
 # upload file api
+uploaded_documents={}
+
 @app.post("/upload")
 async def upload_file(file: UploadFile=File(...)):
     file_extension=Path(file.filename).suffix.lower()
@@ -156,7 +180,10 @@ async def upload_file(file: UploadFile=File(...)):
 
     temp_file.unlink()
 
+    document_id=str(uuid.uuid4())
+    uploaded_documents[document_id]=extracted_text
+
     return {
         "filename":file.filename,
-        "text":extracted_text
+        "document_id":document_id,
     }
