@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from groq import Groq
 from pypdf import PdfReader
 from docx import Document
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -132,4 +132,31 @@ def chat(request:ChatRequest):
 
     return {
         "response":response
+    }
+
+# upload file api
+@app.post("/upload")
+async def upload_file(file: UploadFile=File(...)):
+    file_extension=Path(file.filename).suffix.lower()
+
+    if file_extension not in [".pdf", ".docx"]:
+        return {
+            "error":"Only PDF and Docs files are supported."
+        }
+
+    temp_file=Path("temp")/file.filename
+    temp_file.parent.mkdir(exist_ok=True)
+
+    contents=await file.read()
+
+    with open(temp_file,"wb") as f:
+        f.write(contents) 
+
+    extracted_text=read_file(temp_file)
+
+    temp_file.unlink()
+
+    return {
+        "filename":file.filename,
+        "text":extracted_text
     }
